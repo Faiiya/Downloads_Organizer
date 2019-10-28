@@ -1,14 +1,16 @@
 #Organizador de la carpeta downloads 
 
 from os import listdir, mkdir, rename
-from os.path import isfile, join, splitext
+from os.path import isfile, join, splitext, exists
 from time import gmtime, strftime
 from shutil import move
 
+# list of paths to check on for files
 download_paths = ['/home/faiya/Downloads','/media/faiya/B80843F40843B064/Users/Trabajo/Downloads', '/media/faiya/B80843F40843B064/Users/faiya/Downloads']
 
 destination_path = '/media/faiya/CAE2E37BE2E369E1/999. DOWNLOADS' #'/home/faiya/Documents'
 
+# list of folders you want to create to organize
 dirs = {
     1: '/1 pictures',
     2: '/2 videos',
@@ -18,6 +20,7 @@ dirs = {
     6: '/6 executables'
 }
 
+# list of fileextensions to folder
 switcher = {
         "jpg":  1,
         "jpeg": 1,
@@ -69,6 +72,10 @@ def order_files(listfiles, path):
             # create the paths
             filepath = path+"/"+file
             newpath = destination_path+dirs.get(switch)
+            # check if directory exists before moving, otherwise in a rare case it can create a bug where
+            # it creates a file and move files to it basically deleting your files.
+            if not exists(newpath):
+                createDirectory(newpath)
             # get the time
             time = strftime("[%Y-%m-%d %H:%M:%S]", gmtime())
             # log the action
