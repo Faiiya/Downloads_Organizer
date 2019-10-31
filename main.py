@@ -9,14 +9,16 @@ import re
 import pickle
 
 # list of paths to check on for files
-checked_folders = ['/home/faiya/Downloads','/media/faiya/B80843F40843B064/Users/Trabajo/Downloads', '/media/faiya/B80843F40843B064/Users/faiya/Downloads']
+checked_folders = ['/home/YOU/Downloads','/OTHER/FOLDER/PATH']
 
-dest_folder = '/media/faiya/D/999. DOWNLOADS' #'/home/faiya/Documents'
+dest_folder = '/your/dest/folder'
 
 pathname = dirname(sys.argv[0])     
 
 not_recognized = []
+
 # list of folders you want to create to organize
+# you can add as much as you want or remove the ones you dont like
 dirs = {
     1: '/1 pictures',
     2: '/2 videos',
@@ -27,6 +29,8 @@ dirs = {
 }
 
 # list of fileextensions to folder
+# to add an extension just put the name and the dest folder
+# of dirs
 switcher = {
         "jpg":  1,
         "jpeg": 1,
