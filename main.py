@@ -1,15 +1,21 @@
 #Organizador de la carpeta downloads 
 
 from os import listdir, mkdir, rename
-from os.path import isfile, join, splitext, exists
+import sys
+from os.path import isfile, join, splitext, exists, dirname
 from time import gmtime, strftime
 from shutil import move
+import re
+import pickle
 
 # list of paths to check on for files
-download_paths = ['/home/faiya/Downloads','/media/faiya/B80843F40843B064/Users/Trabajo/Downloads', '/media/faiya/B80843F40843B064/Users/faiya/Downloads']
+checked_folders = ['/home/faiya/Downloads','/media/faiya/B80843F40843B064/Users/Trabajo/Downloads', '/media/faiya/B80843F40843B064/Users/faiya/Downloads']
 
-destination_path = '/media/faiya/CAE2E37BE2E369E1/999. DOWNLOADS' #'/home/faiya/Documents'
+dest_folder = '/media/faiya/D/999. DOWNLOADS' #'/home/faiya/Documents'
 
+pathname = dirname(sys.argv[0])     
+
+not_recognized = []
 # list of folders you want to create to organize
 dirs = {
     1: '/1 pictures',
@@ -30,7 +36,10 @@ switcher = {
         "webm": 2,
         "pdf":  3,
         "odt":  3,
+        'ods':  3,
+        'ini':  3,
         "doc":  3,
+        'log':  3,
         "docx": 3,
         "txt":  3,
         'json': 3,
@@ -41,24 +50,56 @@ switcher = {
         "azw3": 5,
         'exe':  6,
         'msi':  6,
+        'jar':  6,
+        'sh':   6,
+        'apk':  6,
+        'vce':  6,
+        'iso':  6,
         'torrent': 6,
     }
 
 def createDirectory(dirName):
     try:
         # Create target Directory
-        mkdir(dirName)
-        print("Creating directory %s" % (dirName))
+        mkdir(dirName)     
     # the directory allready exists
     except FileExistsError as e:
         pass
 
+def move_rename(path,newpath,file):
+    filename, filextension = splitext(file)
+
+    # get the number of the switch depending of file extension
+    switch = switcher.get(filextension.lower(), 0)
+
+    tem_filename = filename
+    old_name = path+"/"+file
+    if "rename_" in filename:
+        filename = re.sub('(\d+)(?!.*\d)', lambda x: str(int(x.group(0)) + 1), filename)
+    else:
+        filename = filename+" rename_1"
+    filepath= path+"/"+filename+filextension
+
+    # get the time
+    time = strftime("[%Y-%m-%d %H:%M:%S]", gmtime())
+    # log the action
+    print("[INFO]{:22} Renaming {:<20.20} to {:<20.20}".format(time, tem_filename, filename))
+    rename(old_name,filepath)
+    try:
+        print("[INFO]{:22} Moving {:<40.40} from {:<20.20} to {:10} ".format(time, filepath, path, dirs.get(switch)))
+        move(filepath,newpath)
+    except:
+        move_rename(path,newpath,filename+filextension)
+
 def setup():
-    createDirectory(destination_path+'/1 pictures')
-    createDirectory(destination_path+'/2 videos')
-    createDirectory(destination_path+'/3 documentos')
-    createDirectory(destination_path+'/4 zip')
-    createDirectory(destination_path+'/5 libros')
+    global not_recognized
+    for key, value in dirs.items():
+        createDirectory(dest_folder+value)
+    try:
+        with open(pathname+'/not_recognized.pkl', 'rb') as f:
+            not_recognized = pickle.load(f)
+    except FileNotFoundError:
+        not_recognized = []
 
 def order_files(listfiles, path):
     for file in listfiles:
@@ -71,7 +112,7 @@ def order_files(listfiles, path):
         if switch != 0:
             # create the paths
             filepath = path+"/"+file
-            newpath = destination_path+dirs.get(switch)
+            newpath = dest_folder+dirs.get(switch)
             # check if directory exists before moving, otherwise in a rare case it can create a bug where
             # it creates a file and move files to it basically deleting your files.
             if not exists(newpath):
@@ -79,17 +120,30 @@ def order_files(listfiles, path):
             # get the time
             time = strftime("[%Y-%m-%d %H:%M:%S]", gmtime())
             # log the action
-            print("{:22} Moving {:<40.40} from {:<20.20} to {:10} ".format(time, file, path, dirs.get(switch)))
-            # move the file
-            move(filepath,newpath)
-
-            # print("[WARNING] File extension for {} not recognized".format(file))
+            print("[INFO]{:22} Moving {:<40.40} from {:<20.20} to {:10} ".format(time, file, path, dirs.get(switch)))
+            try:
+                # move the file
+                move(filepath,newpath)
+            except:
+                print("[WARNING]{:22} name allready exists {}".format(time, filename))
+                move_rename(path,newpath,file)
+        elif file not in not_recognized:
+            # get the time
+            time = strftime("[%Y-%m-%d %H:%M:%S]", gmtime())
+            # log the action
+            print("[WARNING]{:22} File extension for {} not recognized".format(time, file))
+            not_recognized.append(file)
         
 if __name__ == "__main__":
     # create the folders if they dont exist
     setup()
 
-    print("[INFO] Checking files")
-    for path in download_paths: 
+    time = strftime("[%Y-%m-%d %H:%M:%S]", gmtime()) 
+    print("[INFO]{:22} Checking files".format(time))
+
+    for path in checked_folders: 
         listfiles = [f for f in listdir(path) if isfile(join(path, f))]
         order_files(listfiles, path)
+    
+    with open(pathname+'/not_recognized.pkl', 'wb') as f:
+        pickle.dump(not_recognized, f)
